@@ -3,6 +3,8 @@ var Engine = Matter.Engine,
     Runner = Matter.Runner,
     Composites = Matter.Composites,
     Common = Matter.Common,
+    Vertices = Matter.Vertices,
+    Svg = Matter.Svg,
     MouseConstraint = Matter.MouseConstraint,
     Mouse = Matter.Mouse,
     World = Matter.World,
@@ -22,7 +24,7 @@ var render = Render.create({
     options: {
         width: width,
         height: height,
-        showAngleIndicator: true
+        pixelRatio: 2
     }
 });
 
@@ -32,35 +34,7 @@ Render.run(render);
 var runner = Runner.create();
 Runner.run(runner, engine);
 
-// add bodies
-var stack = Composites.stack(20, 20, 10, 5, 0, 0, function(x, y) {
-    var sides = Math.round(Common.random(1, 8));
-
-    // triangles can be a little unstable, so avoid until fixed
-    sides = (sides === 3) ? 4 : sides;
-
-    // round the edges of some bodies
-    var chamfer = null;
-    if (sides > 2 && Common.random() > 0.7) {
-        chamfer = {
-            radius: 10
-        };
-    }
-
-    switch (Math.round(Common.random(0, 1))) {
-    case 0:
-        if (Common.random() < 0.8) {
-            return Bodies.rectangle(x, y, Common.random(25, 50), Common.random(25, 50), { chamfer: chamfer });
-        } else {
-            return Bodies.rectangle(x, y, Common.random(80, 120), Common.random(25, 30), { chamfer: chamfer });
-        }
-    case 1:
-        return Bodies.polygon(x, y, sides, Common.random(25, 50), { chamfer: chamfer });
-    }
-});
-
 World.add(world, [
-    stack,
     Bodies.rectangle(width/2, -25, width, 50, { isStatic: true }),
     Bodies.rectangle(width/2, height+25, width, 50, { isStatic: true }),
     Bodies.rectangle(width+25, height/2, 50, height, { isStatic: true }),
@@ -91,6 +65,53 @@ if (typeof window !== 'undefined') {
     window.addEventListener('deviceorientation', updateGravity);
 }
 
+// get character data
+HanziWriter.loadCharacterData('亂').then(function(charData) {
+  let paths = [];
+  charData.strokes.forEach(function(strokePath) {
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttributeNS(null, 'd', strokePath);
+    paths.push(path);
+  });
+  createStrokes(paths);
+});
+
+function createStrokes (paths) {
+  var means = [];
+  var allVertexSets = [];
+
+  for (var i = 0; i < paths.length; i += 1) {
+    var vertexSets = [],
+      color = Common.choose(['#556270', '#4ECDC4', '#C7F464', '#FF6B6B', '#C44D58']);
+
+    var path = paths[i];
+    var pts = Svg.pathToVertices(path, 30);
+    var trfmd = Vertices.scale(pts, -0.3, 0.3, {x: 0, y: 0});
+    var rttd = Vertices.rotate(trfmd, 3.14, {x: 0, y: 0});
+    var mean = Vertices.mean(rttd);
+    vertexSets.push(rttd);
+    means.push(mean);
+    allVertexSets.push(vertexSets);
+  }
+
+  var spawnCount = 0;
+  var spawnInterval = setInterval(() => {
+    for(var i = 0; i < allVertexSets.length; i++) {
+      var color = '#FF0000';
+      World.add(engine.world, Bodies.fromVertices(means[i].x + 120, means[i].y + 300, allVertexSets[i], {
+          render: {
+              fillStyle: color,
+              strokeStyle: color
+          }
+      }, true));
+    }
+    spawnCount++;
+    if(spawnCount >= 3) {
+      clearInterval(spawnInterval);
+    }
+  }, 800);
+}
+
 // add mouse control
 var mouse = Mouse.create(render.canvas),
     mouseConstraint = MouseConstraint.create(engine, {
@@ -107,9 +128,3 @@ World.add(world, mouseConstraint);
 
 // keep the mouse in sync with rendering
 render.mouse = mouse;
-
-// fit the render viewport to the scene
-// Render.lookAt(render, {
-//     min: { x: 0, y: 0 },
-//     max: { x: 800, y: 600 }
-// });
