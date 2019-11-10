@@ -12,13 +12,16 @@ var Engine = Matter.Engine,
 var engine = Engine.create(),
     world = engine.world;
 
+var width = window.innerWidth;
+var height = window.innerHeight;
+
 // create renderer
 var render = Render.create({
     element: document.body,
     engine: engine,
     options: {
-        width: 800,
-        height: 600,
+        width: width,
+        height: height,
         showAngleIndicator: true
     }
 });
@@ -58,15 +61,14 @@ var stack = Composites.stack(20, 20, 10, 5, 0, 0, function(x, y) {
 
 World.add(world, [
     stack,
-    Bodies.rectangle(400, 0, 800, 50, { isStatic: true }),
-    Bodies.rectangle(400, 600, 800, 50, { isStatic: true }),
-    Bodies.rectangle(800, 300, 50, 600, { isStatic: true }),
-    Bodies.rectangle(0, 300, 50, 600, { isStatic: true })
+    Bodies.rectangle(width/2, -25, width, 50, { isStatic: true }),
+    Bodies.rectangle(width/2, height+25, width, 50, { isStatic: true }),
+    Bodies.rectangle(width+25, height/2, 50, height, { isStatic: true }),
+    Bodies.rectangle(-25, height/2, 50, height, { isStatic: true })
 ]);
 
 // add gyro control
 if (typeof window !== 'undefined') {
-  console.log('type of window undefined')
     var updateGravity = function(event) {
         var orientation = typeof window.orientation !== 'undefined' ? window.orientation : 0,
             gravity = engine.world.gravity;
