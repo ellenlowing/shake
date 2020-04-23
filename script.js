@@ -56,8 +56,9 @@ let interval = setInterval(() => {
 }, 1000);
 
 // add gyro control
+let updateGravity = null;
 if (typeof window !== 'undefined') {
-    let updateGravity = function(event) {
+    updateGravity = function(event) {
         let orientation = typeof window.orientation !== 'undefined' ? window.orientation : 0,
             gravity = engine.world.gravity;
         if (orientation === 0) {
@@ -74,19 +75,22 @@ if (typeof window !== 'undefined') {
             gravity.y = Common.clamp(event.gamma, -90, 90) / 90 * multiplier;
         }
     };
+}
 
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission()
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            window.addEventListener('deviceorientation', updateGravity);
-          }
-        })
-        .catch(console.error);
-    } else {
-      // handle regular non iOS 13+ devices
-    }
-    // window.addEventListener('deviceorientation', updateGravity);
+$(window).click( onClick );
+
+function onClick() {
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', updateGravity);
+        }
+      })
+      .catch(console.error);
+  } else {
+    // handle regular non iOS 13+ devices
+  }
 }
 
 // get character data
