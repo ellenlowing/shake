@@ -24,7 +24,8 @@ let render = Render.create({
     options: {
         width: width,
         height: height,
-        pixelRatio: 2
+        pixelRatio: 2,
+        showCollisions: true
     }
 });
 
@@ -74,7 +75,18 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    window.addEventListener('deviceorientation', updateGravity);
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            window.addEventListener('deviceorientation', updateGravity);
+          }
+        })
+        .catch(console.error);
+    } else {
+      // handle regular non iOS 13+ devices
+    }
+    // window.addEventListener('deviceorientation', updateGravity);
 }
 
 // get character data
